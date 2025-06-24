@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
@@ -11,11 +12,13 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
+
+	"saga-pattern/internal/database/models"
 )
 
 // Hardcoded DB config — you can replace this with env vars or config file later
 const (
-	host     = "localhost"
+	host     = "order-database"
 	port     = 5432
 	user     = "myuser"
 	password = "somerandompassword"
@@ -71,9 +74,18 @@ func NewDatabase(log *zap.Logger) (*bun.DB, error) {
 	return db, nil
 }
 
-func LogDBConnection(log *zap.Logger) {
-	log.Info("Database connection created successfully")
+func runMigrations(ctx context.Context, db *bun.DB) error {
+	_, err := db.NewCreateTable().Model((*models.Order)(nil)).Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create Orders table: %w", err)
+	}
+	return nil
 }
 
 // Module provides the *bun.DB instance for use in other fx components
-var Module = fx.Module("database", fx.Provide(NewDatabase), fx.Invoke(LogDBConnection))
+var Module = fx.Module("database",
+	fx.Provide(NewDatabase),
+	fx.Invoke(func(db *bun.DB) error {
+		return runMigrations(context.Background(), db)
+	}),
+)
