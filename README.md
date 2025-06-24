@@ -22,6 +22,14 @@ For this setup our main tools are:
 
 And the idea to put this into a production stage with multiple images, looking to deploy in something similar to ECS.
 
+```bash
+# Run our application without cleaning the databases
+bash setup/run-app.sh
+
+# Run our application cleaning the database (cleaning volumes)
+docker setup/run-app.sh -c / --clean
+```
+
 ## Easier Developer Experience
 In this stage, we are introducing:
 - Skaffold for easier local development to avopid using docker compose for local development
