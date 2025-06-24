@@ -1,0 +1,35 @@
+# SAGA Pattern implemented in Go
+
+This is an example of how a [SAGA Pattern](https://medium.com/cloud-native-daily/microservices-patterns-part-04-saga-pattern-a7f85d8d4aa3) can be implemented using an Choreography structure in Go. This is purely educational.
+
+This project will also showcase (using different branches) how we can simplify the life of the developer experience with the introduction of tools such as Skaffold, Helm and Make.
+
+# Structure of the project
+For this project, we are going to show a minimal setup of 3 microservices:
+- Order: Service incharge of handling all the orders that are made to our restaurant
+- Payment: Service incharge of handling all the payments of all the orders
+- Deliveries: Service incharge of handling all the deliveres to the user
+
+# How to run it?
+> [!IMPORTANT]
+> On every branch you can find the SAGA pattern implemented the same way, the only thing that will change is our toolset
+
+This is a complex question as you may think, but this are the step depending on the branch that you are placed:
+
+## Basic tooling
+For this setup our main tools are:
+- Docker compose for development
+
+And the idea to put this into a production stage is basically using ECS.
+
+## Easier Developer Experience
+In this stage, we are introducing Skaffold and K8S (using minikube for easier development locally).
+
+
+## Don't want to repeat, let's template
+
+In this stage, Helm is introduce to avoid duplication inside of our YAML's and have a versioning of our deployments.
+
+# Refernces
+This were some of the posts and articles that I read to make this project:
+- [Database per Microservice pattern](https://microservices.io/patterns/data/database-per-service.html)
