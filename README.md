@@ -16,14 +16,17 @@ For this project, we are going to show a minimal setup of 3 microservices:
 
 This is a complex question as you may think, but this are the step depending on the branch that you are placed:
 
-## Basic tooling
+## Basic tooling (branch `barebones-approach`)
 For this setup our main tools are:
 - Docker compose for development
 
-And the idea to put this into a production stage is basically using ECS.
+And the idea to put this into a production stage with multiple images, looking to deploy in something similar to ECS.
 
 ## Easier Developer Experience
-In this stage, we are introducing Skaffold and K8S (using minikube for easier development locally).
+In this stage, we are introducing:
+- Skaffold for easier local development to avopid using docker compose for local development
+- Make for building our application in a more automated way
+- K8s (using minikube), to a have a better control over our containers
 
 
 ## Don't want to repeat, let's template
