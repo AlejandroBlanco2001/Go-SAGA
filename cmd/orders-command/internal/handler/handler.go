@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 
 	"github.com/uptrace/bun"
@@ -14,7 +15,7 @@ func StartServer(lc fx.Lifecycle, db *bun.DB, logger *zap.Logger) {
 		OnStart: func(ctx context.Context) error {
 			go func() {
 				logger.Info("Starting server on port 8080")
-				if err := http.ListenAndServe(":8080", NewHandler(logger)); err != nil {
+				if err := http.ListenAndServe(":8080", NewHandler(logger, db, ctx)); err != nil {
 					logger.Error("Failed to start server", zap.Error(err))
 				}
 			}()
@@ -23,7 +24,7 @@ func StartServer(lc fx.Lifecycle, db *bun.DB, logger *zap.Logger) {
 	})
 }
 
-func NewHandler(logger *zap.Logger) http.Handler {
+func NewHandler(logger *zap.Logger, db *bun.DB, ctx context.Context) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -32,8 +33,35 @@ func NewHandler(logger *zap.Logger) http.Handler {
 	})
 
 	mux.HandleFunc("/orders", func(w http.ResponseWriter, r *http.Request) {
+		orders, err := GetOrders(ctx, db)
+
+		if err != nil {
+			logger.Error("Failed to get orders", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Failed to get orders"))
+			return
+		}
+
+		json.NewEncoder(w).Encode(orders)
+
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Hello, World!"))
+		w.Write([]byte("Orders fetched successfully"))
+	})
+
+	mux.HandleFunc("POST /orders", func(w http.ResponseWriter, r *http.Request) {
+		order, err := CreateOrder(ctx, db, r)
+
+		if err != nil {
+			logger.Error("Failed to create order", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Failed to create order"))
+			return
+		}
+
+		logger.Info("Order created: ", zap.Any("order", order))
+
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte("Order created successfully"))
 	})
 
 	return mux

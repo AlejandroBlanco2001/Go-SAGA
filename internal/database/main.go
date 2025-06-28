@@ -74,18 +74,35 @@ func NewDatabase(log *zap.Logger) (*bun.DB, error) {
 	return db, nil
 }
 
-func runMigrations(ctx context.Context, db *bun.DB) error {
-	_, err := db.NewCreateTable().Model((*models.Order)(nil)).Exec(ctx)
+func runMigrations(ctx context.Context, db *bun.DB, log *zap.Logger) error {
+	log.Info("Running migrations")
+
+	exists, err := db.NewSelect().Table("orders").Exists(ctx)
+
 	if err != nil {
-		return fmt.Errorf("failed to create Orders table: %w", err)
+		return fmt.Errorf("failed to check if orders table exists: %w", err)
 	}
+
+	if !exists {
+		log.Info("Orders table does not exist, creating...")
+
+		_, err := db.NewCreateTable().Model((*models.Order)(nil)).Exec(ctx)
+
+		if err != nil {
+			return fmt.Errorf("failed to create Orders table: %w", err)
+		}
+
+		log.Info("Orders table created")
+	}
+
+	log.Info("Migrations completed")
 	return nil
 }
 
 // Module provides the *bun.DB instance for use in other fx components
 var Module = fx.Module("database",
 	fx.Provide(NewDatabase),
-	fx.Invoke(func(db *bun.DB) error {
-		return runMigrations(context.Background(), db)
+	fx.Invoke(func(db *bun.DB, log *zap.Logger) error {
+		return runMigrations(context.Background(), db, log)
 	}),
 )
