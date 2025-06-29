@@ -35,12 +35,17 @@ func NewHandler(logger *zap.Logger, db *bun.DB, ctx context.Context) http.Handle
 	})
 
 	mux.HandleFunc("/orders", func(w http.ResponseWriter, r *http.Request) {
-		orders, err := GetOrders(ctx, db)
+		orders, err := GetOrders(r.Context(), db)
 
 		if err != nil {
 			logger.Error("Failed to get orders", zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Failed to get orders"))
+			return
+		}
+
+		if len(*orders) == 0 {
+			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 
@@ -52,7 +57,7 @@ func NewHandler(logger *zap.Logger, db *bun.DB, ctx context.Context) http.Handle
 	mux.HandleFunc("GET /orders/{id}", func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 
-		order, err := GetOrder(ctx, db, id)
+		order, err := GetOrder(r.Context(), db, id)
 
 		if err != nil {
 			logger.Error("Failed to get order", zap.Error(err), zap.String("id", id))
@@ -72,7 +77,7 @@ func NewHandler(logger *zap.Logger, db *bun.DB, ctx context.Context) http.Handle
 	})
 
 	mux.HandleFunc("POST /orders", func(w http.ResponseWriter, r *http.Request) {
-		order, err := CreateOrder(ctx, db, r)
+		order, err := CreateOrder(r.Context(), db, r)
 
 		if err != nil {
 			logger.Error("Failed to create order", zap.Error(err))
