@@ -1,0 +1,6 @@
+{
+    "go.buildFlags": [
+        "-tags=test"
+    ],
+    "go.testTags": "test",
+}

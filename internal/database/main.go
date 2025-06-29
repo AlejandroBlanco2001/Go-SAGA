@@ -77,25 +77,14 @@ func NewDatabase(log *zap.Logger) (*bun.DB, error) {
 func runMigrations(ctx context.Context, db *bun.DB, log *zap.Logger) error {
 	log.Info("Running migrations")
 
-	exists, err := db.NewSelect().Table("orders").Exists(ctx)
+	_, err := db.NewCreateTable().Model((*models.Order)(nil)).IfNotExists().Exec(ctx)
 
 	if err != nil {
-		return fmt.Errorf("failed to check if orders table exists: %w", err)
-	}
-
-	if !exists {
-		log.Info("Orders table does not exist, creating...")
-
-		_, err := db.NewCreateTable().Model((*models.Order)(nil)).Exec(ctx)
-
-		if err != nil {
-			return fmt.Errorf("failed to create Orders table: %w", err)
-		}
-
-		log.Info("Orders table created")
+		return fmt.Errorf("failed to create Orders table: %w", err)
 	}
 
 	log.Info("Migrations completed")
+
 	return nil
 }
 

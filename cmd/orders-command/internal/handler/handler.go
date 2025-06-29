@@ -42,10 +42,9 @@ func NewHandler(logger *zap.Logger, db *bun.DB, ctx context.Context) http.Handle
 			return
 		}
 
-		json.NewEncoder(w).Encode(orders)
-
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Orders fetched successfully"))
+		json.NewEncoder(w).Encode(orders)
 	})
 
 	mux.HandleFunc("POST /orders", func(w http.ResponseWriter, r *http.Request) {
