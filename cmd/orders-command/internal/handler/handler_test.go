@@ -17,24 +17,10 @@ import (
 )
 
 func setupHandler(t *testing.T) (http.Handler, *bun.DB) {
-	db := database.NewMockDatabase(t)
+	db := database.NewMockDatabase(t, &models.Order{})
 	logger, _ := zap.NewDevelopment()
 	handler := NewHandler(logger, db, context.Background())
 	return handler, db
-}
-
-func WipeDatabase(db *bun.DB) error {
-	tables := []string{
-		"orders",
-	}
-
-	for _, table := range tables {
-		_, err := db.Exec(fmt.Sprintf("DELETE FROM %s;", table))
-		if err != nil {
-			return fmt.Errorf("failed to wipe table %s: %w", table, err)
-		}
-	}
-	return nil
 }
 
 func TestHealthEndpoint(t *testing.T) {
@@ -85,21 +71,19 @@ func TestHealthEndpoint(t *testing.T) {
 	}
 }
 
-func TestGetOrdersEndpoint(t *testing.T) {
-	handler, db := setupHandler(t)
-	server := httptest.NewServer(handler)
-	defer server.Close()
-
+func TestGetListOrdersEndpoint(t *testing.T) {
 	tests := []struct {
 		name           string
 		method         string
 		expectedStatus int
+		endpointURL    string
 		populateDB     func(db *bun.DB) []models.Order
 	}{
 		{
 			name:           "GET request should return 200 OK and return empty orders",
 			method:         "GET",
 			expectedStatus: http.StatusOK,
+			endpointURL:    "/orders",
 			populateDB: func(db *bun.DB) []models.Order {
 				return []models.Order{}
 			},
@@ -107,15 +91,16 @@ func TestGetOrdersEndpoint(t *testing.T) {
 		{
 			name:           "GET request should return 200 OK and return one order",
 			method:         "GET",
+			endpointURL:    "/orders",
 			expectedStatus: http.StatusOK,
 			populateDB: func(db *bun.DB) []models.Order {
 				order := &models.Order{
 					Price:    100,
-					Products: "Product 1",
+					Products: "1",
 					UserID:   1,
 				}
 
-				_, _ = db.NewInsert().Model(order).Exec(context.Background())
+				_, _ = db.NewInsert().Model(order).Returning("*").Exec(context.Background())
 
 				return []models.Order{*order}
 			},
@@ -123,6 +108,7 @@ func TestGetOrdersEndpoint(t *testing.T) {
 		{
 			name:           "GET request should return 200 OK and return multiple orders",
 			method:         "GET",
+			endpointURL:    "/orders",
 			expectedStatus: http.StatusOK,
 			populateDB: func(db *bun.DB) []models.Order {
 				orders := []models.Order{}
@@ -130,14 +116,14 @@ func TestGetOrdersEndpoint(t *testing.T) {
 				for i := 0; i < 10; i++ {
 					order := &models.Order{
 						Price:    float64(i),
-						Products: fmt.Sprintf("Product %d", i),
+						Products: fmt.Sprintf("%d", i),
 						UserID:   int64(i),
 					}
 
 					orders = append(orders, *order)
 				}
 
-				_, _ = db.NewInsert().Model(&orders).Exec(context.Background())
+				_, _ = db.NewInsert().Model(&orders).Returning("*").Exec(context.Background())
 
 				return orders
 			},
@@ -146,14 +132,14 @@ func TestGetOrdersEndpoint(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// FIXME: this is a hack to wipe the database, there is a better way to do this
-			err := WipeDatabase(db)
+			handler, db := setupHandler(t)
+			server := httptest.NewServer(handler)
+			defer server.Close()
 
-			if err != nil {
-				t.Fatal(err)
-			}
+			url := fmt.Sprintf("%s%s", server.URL, tt.endpointURL)
 
-			req, err := http.NewRequest(tt.method, server.URL+"/orders", nil)
+			req, err := http.NewRequest(tt.method, url, nil)
+
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -172,18 +158,113 @@ func TestGetOrdersEndpoint(t *testing.T) {
 			}
 
 			body, err := io.ReadAll(resp.Body)
+
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			var orders []models.Order
 			err = json.Unmarshal(body, &orders)
+
 			if err != nil {
 				t.Fatalf("failed to parse JSON: %v; raw body: %s", err, string(body))
 			}
 
 			if len(orders) != len(expectedOrders) {
 				t.Errorf("expected %d orders, got %d", len(expectedOrders), len(orders))
+			}
+
+			for i, order := range orders {
+				if order.ID != expectedOrders[i].ID {
+					t.Errorf("expected order %v, got %v", expectedOrders[i], order)
+				}
+			}
+		})
+	}
+}
+
+func TestGetUniqueOrdersEndpoint(t *testing.T) {
+	tests := []struct {
+		name           string
+		method         string
+		expectedStatus int
+		endpointURL    string
+		populateDB     func(db *bun.DB) *models.Order
+	}{
+		{
+			name:           "GET request should return 200 OK and return one order",
+			method:         "GET",
+			endpointURL:    "/orders/1",
+			expectedStatus: http.StatusOK,
+			populateDB: func(db *bun.DB) *models.Order {
+				order := &models.Order{
+					Price:    100,
+					Products: "1",
+					UserID:   1,
+				}
+
+				_, _ = db.NewInsert().Model(order).Returning("*").Exec(context.Background())
+
+				return order
+			},
+		},
+		{
+			name:           "GET request should return 404 Not Found when order does not exist",
+			method:         "GET",
+			endpointURL:    "/orders/100",
+			expectedStatus: http.StatusNotFound,
+			populateDB: func(db *bun.DB) *models.Order {
+				return nil
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler, db := setupHandler(t)
+			server := httptest.NewServer(handler)
+			defer server.Close()
+
+			url := fmt.Sprintf("%s%s", server.URL, tt.endpointURL)
+
+			req, err := http.NewRequest(tt.method, url, nil)
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			expectedOrder := tt.populateDB(db)
+
+			resp, err := http.DefaultClient.Do(req)
+
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != tt.expectedStatus {
+				t.Errorf("expected status %d, got %d", tt.expectedStatus, resp.StatusCode)
+			}
+
+			body, err := io.ReadAll(resp.Body)
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if expectedOrder == nil {
+				return
+			}
+
+			var order *models.Order
+			err = json.Unmarshal(body, &order)
+
+			if err != nil {
+				t.Fatalf("failed to parse JSON: %v; raw body: %s", err, string(body))
+			}
+
+			if order.ID != expectedOrder.ID {
+				t.Errorf("expected order %v, got %v", expectedOrder, order)
 			}
 		})
 	}

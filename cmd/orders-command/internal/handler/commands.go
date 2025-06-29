@@ -26,6 +26,18 @@ func GetOrders(ctx context.Context, db *bun.DB) (*[]models.Order, error) {
 	return orders, nil
 }
 
+func GetOrder(ctx context.Context, db *bun.DB, id string) (*models.Order, error) {
+	order := new(models.Order)
+
+	err := db.NewSelect().Model(order).Where("id = ?", id).Scan(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return order, nil
+}
+
 func CreateOrder(ctx context.Context, db *bun.DB, r *http.Request) (*models.Order, error) {
 	var payload OrderPayload
 

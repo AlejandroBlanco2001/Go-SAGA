@@ -2,7 +2,9 @@ package handler
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/uptrace/bun"
@@ -47,6 +49,28 @@ func NewHandler(logger *zap.Logger, db *bun.DB, ctx context.Context) http.Handle
 		json.NewEncoder(w).Encode(orders)
 	})
 
+	mux.HandleFunc("GET /orders/{id}", func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+
+		order, err := GetOrder(ctx, db, id)
+
+		if err != nil {
+			logger.Error("Failed to get order", zap.Error(err), zap.String("id", id))
+			if errors.Is(err, sql.ErrNoRows) {
+				w.WriteHeader(http.StatusNotFound)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Order not found"})
+				return
+			}
+
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(order)
+	})
+
 	mux.HandleFunc("POST /orders", func(w http.ResponseWriter, r *http.Request) {
 		order, err := CreateOrder(ctx, db, r)
 
@@ -57,10 +81,8 @@ func NewHandler(logger *zap.Logger, db *bun.DB, ctx context.Context) http.Handle
 			return
 		}
 
-		logger.Info("Order created: ", zap.Any("order", order))
-
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte("Order created successfully"))
+		json.NewEncoder(w).Encode(order)
 	})
 
 	return mux
