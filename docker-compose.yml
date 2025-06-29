@@ -14,6 +14,8 @@ services:
       - ALLOW_PLAINTEXT_LISTENER=yes
     ports:
       - "9094:9094"
+    volumes:
+      - kafka_data:/bitnami/kafka
     networks:
       - kafka-network
 
@@ -54,3 +56,4 @@ networks:
 
 volumes:
   postgres_data:
+  kafka_data:
