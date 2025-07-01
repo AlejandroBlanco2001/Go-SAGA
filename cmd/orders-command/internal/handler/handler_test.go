@@ -19,7 +19,7 @@ import (
 func setupHandler(t *testing.T) (http.Handler, *bun.DB) {
 	db := database.NewMockDatabase(t, &models.Order{})
 	logger, _ := zap.NewDevelopment()
-	handler := NewHandler(logger, db, context.Background())
+	handler := NewHandler(logger, db, context.Background(), nil)
 	return handler, db
 }
 
@@ -95,10 +95,11 @@ func TestGetListOrdersEndpoint(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			populateDB: func(db *bun.DB) []models.Order {
 				order := &models.Order{
-					Price:    100,
-					Product:  "1",
-					Quantity: 1,
-					UserID:   1,
+					Price:     100,
+					OrderID:   "1",
+					ProductID: "1",
+					Quantity:  1,
+					UserID:    1,
 				}
 
 				_, _ = db.NewInsert().Model(order).Returning("*").Exec(context.Background())
@@ -116,10 +117,11 @@ func TestGetListOrdersEndpoint(t *testing.T) {
 
 				for i := 0; i < 10; i++ {
 					order := &models.Order{
-						Price:    float64(i),
-						Product:  fmt.Sprintf("%d", i),
-						Quantity: int64(i),
-						UserID:   int64(i),
+						Price:     float64(i),
+						OrderID:   fmt.Sprintf("%d", i),
+						ProductID: fmt.Sprintf("%d", i),
+						Quantity:  int64(i),
+						UserID:    int64(i),
 					}
 
 					orders = append(orders, *order)
@@ -200,10 +202,11 @@ func TestGetUniqueOrdersEndpoint(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			populateDB: func(db *bun.DB) *models.Order {
 				order := &models.Order{
-					Price:    100,
-					Product:  "1",
-					Quantity: 1,
-					UserID:   1,
+					Price:     100,
+					OrderID:   "1",
+					ProductID: "1",
+					Quantity:  1,
+					UserID:    1,
 				}
 
 				_, _ = db.NewInsert().Model(order).Returning("*").Exec(context.Background())

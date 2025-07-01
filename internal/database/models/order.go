@@ -5,11 +5,9 @@ import "github.com/uptrace/bun"
 type OrderStatus int
 
 const (
-	orderStatusPending OrderStatus = iota
-	orderStatusConfirmed
-	orderStatusDelivering
-	orderStatusCompleted
-	orderStatusCanceled
+	OrderStatusPending OrderStatus = iota
+	OrderStatusConfirmed
+	OrderStatusCanceled
 )
 
 func (o OrderStatus) String() string {
@@ -23,11 +21,12 @@ func (o OrderStatus) EnumIndex() int {
 type Order struct {
 	bun.BaseModel `bun:"table:orders,alias:o"`
 
-	ID    int64 `bun:",pk,autoincrement"`
-	Price float64
+	ID      int64 `bun:",pk,autoincrement"`
+	OrderID string
+	Price   float64
 
 	// Notice how we avoid the M2M table making an string with the ID of the product
-	Product string
+	ProductID string
 
 	// Quantity of the product
 	Quantity int64

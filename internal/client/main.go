@@ -12,20 +12,20 @@ type KafkaClient struct {
 	conn       *kafka.Conn
 	inputChan  MessageChan
 	outputChan MessageChan
-	api        API
 }
 
-func NewClient(lc fx.Lifecycle, logger *zap.Logger, api API, topic string) (*KafkaClient, error) {
-	conn, err := kafka.DialLeader(context.Background(), "tcp", "localhost:9092", topic, 0)
+func NewClient(lc fx.Lifecycle, logger *zap.Logger, topic string) error {
+	conn, err := kafka.DialLeader(context.Background(), "tcp", "kafka:9092", topic, 0)
 
 	if err != nil {
 		logger.Error("Failed to dial leader", zap.Error(err))
-		return nil, err
+		panic(err)
 	}
 
 	client := &KafkaClient{
-		conn: conn,
-		api:  api,
+		conn:       conn,
+		inputChan:  make(MessageChan),
+		outputChan: make(MessageChan),
 	}
 
 	lc.Append(fx.Hook{
@@ -59,14 +59,16 @@ func NewClient(lc fx.Lifecycle, logger *zap.Logger, api API, topic string) (*Kaf
 		},
 	})
 
-	return client, nil
+	return nil
 }
 
-var Module = fx.Module("client",
-	fx.Provide(
-		fx.Annotate(
-			NewClient,
-			fx.As(new(KafkaClient)),
-		),
-	),
+var Module = fx.Options(
+	fx.Provide(func() MessageChan {
+		return make(MessageChan)
+	}),
+	fx.Provide(NewAPI),
+	fx.Invoke(func(lc fx.Lifecycle, logger *zap.Logger) error {
+		// TODO: Add topic name as an environment variable
+		return NewClient(lc, logger, "orders")
+	}),
 )

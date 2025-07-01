@@ -2,6 +2,7 @@ package main
 
 import (
 	"saga-pattern/cmd/orders-command/internal/handler"
+	"saga-pattern/internal/client"
 	"saga-pattern/internal/database"
 
 	"go.uber.org/fx"
@@ -11,6 +12,7 @@ import (
 func main() {
 	fx.New(
 		fx.Provide(zap.NewExample),
+		client.Module,
 		database.Module,
 		handler.Module,
 	).Run()

@@ -29,8 +29,10 @@ func NewAPI(logger *zap.Logger) API {
 }
 
 func (a *api) SendMessage(ctx context.Context, message kafka.Message) error {
+	a.logger.Info("Sending message", zap.Any("message", message))
 	select {
 	case a.inputChan <- message:
+		a.logger.Info("Message sent", zap.Any("message", message))
 		return nil
 	case <-ctx.Done():
 		return ctx.Err()
