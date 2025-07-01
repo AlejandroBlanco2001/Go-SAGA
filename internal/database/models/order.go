@@ -26,8 +26,11 @@ type Order struct {
 	ID    int64 `bun:",pk,autoincrement"`
 	Price float64
 
-	// Notice how we avoid the M2M table making an string with the ID of the products
-	Products string
+	// Notice how we avoid the M2M table making an string with the ID of the product
+	Product string
+
+	// Quantity of the product
+	Quantity int64
 
 	Status OrderStatus
 

@@ -11,8 +11,9 @@ import (
 
 type OrderPayload struct {
 	Price    float64 `json:"price"`
-	Products string  `json:"products"`
-	UserID   int64   `json:"userID"`
+	Product  string  `json:"product"`
+	Quantity int64   `json:"quantity"`
+	UserID   int64   `json:"user_id"`
 }
 
 func GetOrders(ctx context.Context, db *bun.DB) (*[]models.Order, error) {
@@ -47,7 +48,8 @@ func CreateOrder(ctx context.Context, db *bun.DB, r *http.Request) (*models.Orde
 
 	order := &models.Order{
 		Price:    payload.Price,
-		Products: payload.Products,
+		Product:  payload.Product,
+		Quantity: payload.Quantity,
 		UserID:   payload.UserID,
 	}
 

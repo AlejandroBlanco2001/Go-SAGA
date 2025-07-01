@@ -96,7 +96,8 @@ func TestGetListOrdersEndpoint(t *testing.T) {
 			populateDB: func(db *bun.DB) []models.Order {
 				order := &models.Order{
 					Price:    100,
-					Products: "1",
+					Product:  "1",
+					Quantity: 1,
 					UserID:   1,
 				}
 
@@ -116,7 +117,8 @@ func TestGetListOrdersEndpoint(t *testing.T) {
 				for i := 0; i < 10; i++ {
 					order := &models.Order{
 						Price:    float64(i),
-						Products: fmt.Sprintf("%d", i),
+						Product:  fmt.Sprintf("%d", i),
+						Quantity: int64(i),
 						UserID:   int64(i),
 					}
 
@@ -199,7 +201,8 @@ func TestGetUniqueOrdersEndpoint(t *testing.T) {
 			populateDB: func(db *bun.DB) *models.Order {
 				order := &models.Order{
 					Price:    100,
-					Products: "1",
+					Product:  "1",
+					Quantity: 1,
 					UserID:   1,
 				}
 
