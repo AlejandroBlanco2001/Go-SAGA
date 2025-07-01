@@ -13,6 +13,12 @@ if ! docker ps | grep kafka; then
   fi
 fi
 
+if [[ "$1" =~ ^(--check|-c)$ ]]; then
+  echo "Checking if topics exist"
+  docker exec -it kafka kafka-topics.sh --list --bootstrap-server localhost:9092 | grep -q "orders" && echo "orders topic exists" && echo "payments topic exists" && echo "inventory topic exists"
+  exit 0
+fi
+
 # Create the main topics for SAGA pattern events
 docker exec -it kafka kafka-topics.sh --create --topic orders --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
 docker exec -it kafka kafka-topics.sh --create --topic payments --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
