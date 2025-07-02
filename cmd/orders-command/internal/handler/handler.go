@@ -32,7 +32,7 @@ func NewHandler(logger *zap.Logger, db *bun.DB, ctx context.Context, api client.
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		w.Write([]byte("Orders service is running"))
 	})
 
 	mux.HandleFunc("/orders", func(w http.ResponseWriter, r *http.Request) {

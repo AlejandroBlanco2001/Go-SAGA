@@ -20,6 +20,6 @@ if [[ "$1" =~ ^(--check|-c)$ ]]; then
 fi
 
 # Create the main topics for SAGA pattern events
-docker exec -it kafka kafka-topics.sh --create --topic orders --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
-docker exec -it kafka kafka-topics.sh --create --topic payments --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
-docker exec -it kafka kafka-topics.sh --create --topic inventory --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
+docker exec -it kafka kafka-topics.sh --create --topic orders --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
+docker exec -it kafka kafka-topics.sh --create --topic payments --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
+docker exec -it kafka kafka-topics.sh --create --topic inventory --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1

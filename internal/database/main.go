@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"time"
 
 	"go.uber.org/fx"
@@ -14,15 +15,15 @@ import (
 	"github.com/uptrace/bun/driver/pgdriver"
 
 	"saga-pattern/internal/database/models"
+
+	"github.com/joho/godotenv"
 )
 
 // Hardcoded DB config — you can replace this with env vars or config file later
 const (
-	host     = "order-database"
 	port     = 5432
 	user     = "myuser"
 	password = "somerandompassword"
-	name     = "orders_database"
 )
 
 type DBConfig struct {
@@ -39,12 +40,21 @@ func (c *DBConfig) getDSN() string {
 
 // NewDatabase creates and returns a *bun.DB instance
 func NewDatabase(log *zap.Logger) (*bun.DB, error) {
+	err := godotenv.Load()
+
+	if err != nil {
+		log.Error("Error loading .env file", zap.Error(err))
+	}
+
+	database := os.Getenv("DATABASE_NAME")
+	host := os.Getenv("HOST")
+
 	cfg := DBConfig{
 		host:     host,
 		port:     port,
 		user:     user,
 		password: password,
-		name:     name,
+		name:     database,
 	}
 
 	dsn := cfg.getDSN()
@@ -81,6 +91,12 @@ func runMigrations(ctx context.Context, db *bun.DB, log *zap.Logger) error {
 
 	if err != nil {
 		return fmt.Errorf("failed to create Orders table: %w", err)
+	}
+
+	_, err = db.NewCreateTable().Model((*models.Inventory)(nil)).IfNotExists().Exec(ctx)
+
+	if err != nil {
+		return fmt.Errorf("failed to create Inventory table: %w", err)
 	}
 
 	log.Info("Migrations completed")
