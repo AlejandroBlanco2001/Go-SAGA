@@ -18,11 +18,6 @@ services:
       - kafka_data:/bitnami/kafka
     networks:
       - order-network
-    healthcheck:
-      test: ["CMD-SHELL", "kafka-topics.sh --list --bootstrap-server localhost:9092 | grep -q 'orders'"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   order-database:
     build:
@@ -53,7 +48,7 @@ services:
       order-database:
         condition: service_healthy
       kafka:
-        condition: service_healthy
+        condition: service_started
 
 networks:
   order-network:

@@ -20,10 +20,10 @@ type api struct {
 	logger     *zap.Logger
 }
 
-func NewAPI(logger *zap.Logger) API {
+func NewAPI(logger *zap.Logger, inputChan MessageChan, outputChan MessageChan) API {
 	return &api{
-		inputChan:  make(MessageChan),
-		outputChan: make(MessageChan),
+		inputChan:  inputChan,
+		outputChan: outputChan,
 		logger:     logger,
 	}
 }
