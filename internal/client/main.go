@@ -22,7 +22,6 @@ var topic = os.Getenv("SERVICE_TOPIC")
 func NewClient(lc fx.Lifecycle, logger *zap.Logger, inputChan MessageChan, outputChan MessageChan) error {
 	writer := kafka.NewWriter(kafka.WriterConfig{
 		Brokers:  []string{"kafka:9092"},
-		Topic:    topic,
 		Balancer: &kafka.LeastBytes{},
 	})
 
