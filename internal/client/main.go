@@ -2,46 +2,56 @@ package client
 
 import (
 	"context"
-
+	"os"
 	"github.com/segmentio/kafka-go"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
 
 type KafkaClient struct {
-	conn       *kafka.Conn
+	writer     *kafka.Writer
+	reader     *kafka.Reader
 	inputChan  MessageChan
 	outputChan MessageChan
 	ctx        context.Context
+	topic      string
 }
 
-func NewClient(lc fx.Lifecycle, logger *zap.Logger, inputChan MessageChan, outputChan MessageChan, topic string) error {
-	conn, err := kafka.DialLeader(context.Background(), "tcp", "kafka:9092", topic, 0)
+var topic = os.Getenv("SERVICE_TOPIC")
 
-	if err != nil {
-		logger.Error("Failed to dial leader", zap.Error(err))
-		return err
-	}
+func NewClient(lc fx.Lifecycle, logger *zap.Logger, inputChan MessageChan, outputChan MessageChan) error {
+	writer := kafka.NewWriter(kafka.WriterConfig{
+		Brokers:  []string{"kafka:9092"},
+		Topic:    topic,
+		Balancer: &kafka.LeastBytes{},
+	})
+
+	reader := kafka.NewReader(kafka.ReaderConfig{
+		Brokers: []string{"kafka:9092"},
+		Topic:   topic,
+	})
 
 	client := &KafkaClient{
-		conn:       conn,
+		writer:     writer,
+		reader:     reader,
 		inputChan:  inputChan,
 		outputChan: outputChan,
 		ctx:        context.Background(),
+		topic:      topic,
 	}
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			go func() {
-				logger.Info("Starting to write messages to Kafka")
+				logger.Info("Starting to write messages to Kafka", zap.String("topic", client.topic))
 				for {
 					select {
 					case message := <-client.inputChan:
-						logger.Info("Writing message to Kafka", zap.Any("message", message))
-						if _, err := client.conn.WriteMessages(message); err != nil {
-							logger.Error("Failed to write message to Kafka", zap.Error(err))
+						logger.Info("Writing message to Kafka", zap.Any("message", message), zap.String("topic", client.topic))
+						if err := client.writer.WriteMessages(context.Background(), message); err != nil {
+							logger.Error("Failed to write message to Kafka", zap.Error(err), zap.String("topic", client.topic))
 						} else {
-							logger.Info("Successfully wrote message to Kafka")
+							logger.Info("Successfully wrote message to Kafka", zap.String("topic", client.topic))
 						}
 					case <-client.ctx.Done():
 						return
@@ -50,14 +60,14 @@ func NewClient(lc fx.Lifecycle, logger *zap.Logger, inputChan MessageChan, outpu
 			}()
 
 			go func() {
-				logger.Info("Starting to read messages from Kafka")
+				logger.Info("Starting to read messages from Kafka", zap.String("topic", client.topic))
 				for {
-					message, err := client.conn.ReadMessage(100)
+					message, err := client.reader.ReadMessage(context.Background())
 					if err != nil {
-						logger.Error("Failed to read message", zap.Error(err))
+						logger.Error("Failed to read message", zap.Error(err), zap.String("topic", client.topic))
 						continue
 					}
-					logger.Info("Read message from Kafka", zap.Any("message", message))
+					logger.Info("Read message from Kafka", zap.Any("message", message), zap.String("topic", client.topic))
 					client.outputChan <- message
 				}
 			}()
@@ -65,7 +75,9 @@ func NewClient(lc fx.Lifecycle, logger *zap.Logger, inputChan MessageChan, outpu
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
-			return client.conn.Close()
+			client.writer.Close()
+			client.reader.Close()
+			return nil
 		},
 	})
 
@@ -89,24 +101,27 @@ var Module = fx.Options(
 			fx.ResultTags(`name:"outputChan"`),
 		),
 	),
-	fx.Provide(fx.Annotate(
+	fx.Provide(
+		fx.Annotate(
+			func(params struct {
+				fx.In
+				Logger     *zap.Logger
+				InputChan  MessageChan `name:"inputChan"`
+				OutputChan MessageChan `name:"outputChan"`
+			}) API {
+				return NewAPI(params.Logger, params.InputChan, params.OutputChan)
+			},
+		),
+	),
+	fx.Invoke(
 		func(params struct {
 			fx.In
+			Lc         fx.Lifecycle
 			Logger     *zap.Logger
 			InputChan  MessageChan `name:"inputChan"`
 			OutputChan MessageChan `name:"outputChan"`
-		}) API {
-			return NewAPI(params.Logger, params.InputChan, params.OutputChan)
+		}) error {
+			return NewClient(params.Lc, params.Logger, params.InputChan, params.OutputChan)
 		},
-	)),
-	fx.Invoke(func(params struct {
-		fx.In
-		Lc         fx.Lifecycle
-		Logger     *zap.Logger
-		InputChan  MessageChan `name:"inputChan"`
-		OutputChan MessageChan `name:"outputChan"`
-	}) error {
-		// TODO: Add topic name as an environment variable
-		return NewClient(params.Lc, params.Logger, params.InputChan, params.OutputChan, "orders")
-	}),
+	),
 )

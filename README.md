@@ -8,7 +8,7 @@ This project will also showcase (using different branches) how we can simplify t
 For this project, we are going to show a minimal setup of 3 microservices:
 - Order: Service incharge of handling all the orders that are made to our restaurant
 - Payment: Service incharge of handling all the payments of all the orders
-- Deliveries: Service incharge of handling all the deliveres to the user
+- Inventory: Service incharge of handling all the deliveres to the user
 
 # How to run it?
 > [!IMPORTANT]
@@ -32,9 +32,9 @@ docker setup/run-app.sh -c / --clean
 
 ## Easier Developer Experience
 In this stage, we are introducing:
-- Skaffold for easier local development to avopid using docker compose for local development
-- Make for building our application in a more automated way
-- K8s (using minikube), to a have a better control over our containers
+- 'Skaffold' for easier local development to avopid using docker compose for local development
+- 'Make' for building our application in a more automated way
+- 'K8s' (using minikube), to a have a better control over our containers
 
 
 ## Don't want to repeat, let's template

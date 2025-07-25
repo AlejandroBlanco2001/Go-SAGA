@@ -17,8 +17,23 @@ services:
     volumes:
       - kafka_data:/bitnami/kafka
     networks:
-      - order-network
-      - inventory-network
+      - saga-network
+  
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - "8085:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_READONLY=false
+      - SERVER_PORT=8080
+    networks:
+      - saga-network
+    depends_on:
+      kafka:
+        condition: service_started
 
   order-database:
     build:
@@ -28,7 +43,7 @@ services:
     volumes:
       - orders_postgres_data:/var/lib/postgresql/data
     networks:
-      - order-network
+      - saga-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $$POSTGRES_DB -U $$POSTGRES_USER"]
       interval: 10s
@@ -43,11 +58,12 @@ services:
     environment:
       - DATABASE_NAME=orders_database
       - HOST=order-database
+      - SERVICE_TOPIC=orders
     restart: always
     ports:
       - "8080:8080"
     networks:
-      - order-network
+      - saga-network
     depends_on:
       order-database:
         condition: service_healthy
@@ -62,7 +78,7 @@ services:
     volumes:
       - inventory_postgres_data:/var/lib/postgresql/data
     networks:
-      - inventory-network
+      - saga-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $$POSTGRES_DB -U $$POSTGRES_USER"]
       interval: 10s
@@ -77,11 +93,12 @@ services:
     environment:
       - DATABASE_NAME=inventory_database
       - HOST=inventory-database
+      - SERVICE_TOPIC=inventory
     restart: always
     ports:
       - "8081:8080"
     networks:
-      - inventory-network
+      - saga-network
     depends_on:
       inventory-database:
         condition: service_healthy
@@ -89,9 +106,7 @@ services:
         condition: service_started
 
 networks:
-  order-network:
-    driver: bridge
-  inventory-network:
+  saga-network:
     driver: bridge
 
 volumes:
