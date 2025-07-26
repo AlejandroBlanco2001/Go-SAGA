@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func StartServer(lc fx.Lifecycle, db *bun.DB, logger *zap.Logger, api client.API) {
+func StartServer(lc fx.Lifecycle, db *bun.DB, logger *zap.Logger, api client.API, ctx context.Context) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			go func() {
