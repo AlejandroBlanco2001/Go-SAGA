@@ -58,7 +58,8 @@ services:
     environment:
       - DATABASE_NAME=orders_database
       - HOST=order-database
-      - SERVICE_TOPIC=orders
+      - SERVICE_TOPIC_READ=inventory
+      - SERVICE_TOPIC_WRITE=orders
     restart: always
     ports:
       - "8080:8080"
@@ -93,7 +94,8 @@ services:
     environment:
       - DATABASE_NAME=inventory_database
       - HOST=inventory-database
-      - SERVICE_TOPIC=inventory
+      - SERVICE_TOPIC_READ=orders
+      - SERVICE_TOPIC_WRITE=inventory
     restart: always
     ports:
       - "8081:8080"

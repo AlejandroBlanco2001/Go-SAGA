@@ -17,7 +17,8 @@ type KafkaClient struct {
 	topic      string
 }
 
-var topic = os.Getenv("SERVICE_TOPIC")
+var topic_read = os.Getenv("SERVICE_TOPIC_READ")
+var topic_write = os.Getenv("SERVICE_TOPIC_WRITE")
 
 func NewClient(lc fx.Lifecycle, logger *zap.Logger, inputChan MessageChan, outputChan MessageChan) error {
 	writer := kafka.NewWriter(kafka.WriterConfig{
@@ -27,7 +28,7 @@ func NewClient(lc fx.Lifecycle, logger *zap.Logger, inputChan MessageChan, outpu
 
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: []string{"kafka:9092"},
-		Topic:   topic,
+		Topic:   topic_read,
 	})
 
 	client := &KafkaClient{
@@ -36,21 +37,21 @@ func NewClient(lc fx.Lifecycle, logger *zap.Logger, inputChan MessageChan, outpu
 		inputChan:  inputChan,
 		outputChan: outputChan,
 		ctx:        context.Background(),
-		topic:      topic,
+		topic:      topic_read,
 	}
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			go func() {
-				logger.Info("Starting to write messages to Kafka", zap.String("topic", client.topic))
+				logger.Info("Starting to write messages to Kafka")
 				for {
 					select {
 					case message := <-client.inputChan:
-						logger.Info("Writing message to Kafka", zap.Any("message", message), zap.String("topic", client.topic))
+						logger.Info("Writing message to Kafka", zap.Any("message", message), zap.String("topic", message.Topic))
 						if err := client.writer.WriteMessages(context.Background(), message); err != nil {
-							logger.Error("Failed to write message to Kafka", zap.Error(err), zap.String("topic", client.topic))
+							logger.Error("Failed to write message to Kafka", zap.Error(err), zap.String("topic", message.Topic))
 						} else {
-							logger.Info("Successfully wrote message to Kafka", zap.String("topic", client.topic))
+							logger.Info("Successfully wrote message to Kafka", zap.String("topic", message.Topic))
 						}
 					case <-client.ctx.Done():
 						return
@@ -59,14 +60,14 @@ func NewClient(lc fx.Lifecycle, logger *zap.Logger, inputChan MessageChan, outpu
 			}()
 
 			go func() {
-				logger.Info("Starting to read messages from Kafka", zap.String("topic", client.topic))
+				logger.Info("Starting to read messages from Kafka", zap.String("topic", topic_read))
 				for {
 					message, err := client.reader.ReadMessage(context.Background())
 					if err != nil {
-						logger.Error("Failed to read message", zap.Error(err), zap.String("topic", client.topic))
+						logger.Error("Failed to read message", zap.Error(err), zap.String("topic", topic_read))
 						continue
 					}
-					logger.Info("Read message from Kafka", zap.Any("message", message), zap.String("topic", client.topic))
+					logger.Info("Read message from Kafka", zap.Any("message", message), zap.String("topic", topic_read))
 					client.outputChan <- message
 				}
 			}()
