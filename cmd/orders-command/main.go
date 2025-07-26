@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"saga-pattern/cmd/orders-command/internal/handler"
+	"saga-pattern/cmd/orders-command/internal/message-listener"
 	"saga-pattern/internal/client"
 	"saga-pattern/internal/database"
 
@@ -18,6 +19,7 @@ var options = fx.Options(
 	client.Module,
 	database.Module,
 	handler.Module,
+	message_listener.Module,
 )
 
 func main() {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"saga-pattern/internal/client"
 	"saga-pattern/internal/database/models"
+	"github.com/segmentio/kafka-go"
 
 	"github.com/uptrace/bun"
 	"fmt"
@@ -21,13 +22,19 @@ type OrderMessage struct {
 	Price    float64 `json:"price"`
 }
 
+const (
+	OrderCreatedKey = "OrderCreated"
+	OrderCreatedTopic = "orders"
+	RevertOrderTopic = "inventory"
+	RevertOrderKey = "RevertOrder"
+)
+
 func StartKafkaListener(lc fx.Lifecycle, db *bun.DB, logger *zap.Logger, api client.API) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			go func() {
 				logger.Info("Starting Kafka message listener")
-				
-				// Verify database connection is healthy
+
 				if err := db.PingContext(ctx); err != nil {
 					logger.Error("Database connection is not healthy", zap.Error(err))
 					return
@@ -51,9 +58,9 @@ func StartKafkaListener(lc fx.Lifecycle, db *bun.DB, logger *zap.Logger, api cli
 					key := string(message.Key)
 
 					switch key {
-					case "OrderCreated":
-						if err := handleOrderCreated(db, logger, message.Value); err != nil {
-							logger.Error("Failed to handle OrderCreated message", zap.Error(err))
+					case OrderCreatedKey:
+						if err := handleOrderCreated(db, logger, message.Value, api); err != nil {
+							logger.Error("Failed to handle OrderCreated message, reverting message sent", zap.Error(err))
 						}
 					default:
 						logger.Warn("Unknown message type", zap.String("key", key))
@@ -65,10 +72,16 @@ func StartKafkaListener(lc fx.Lifecycle, db *bun.DB, logger *zap.Logger, api cli
 	})
 }
 
-func handleOrderCreated(db *bun.DB, logger *zap.Logger, value []byte) error {
+func handleOrderCreated(db *bun.DB, logger *zap.Logger, value []byte, api client.API) error {
 	var orderMsg OrderMessage
 	if err := json.Unmarshal(value, &orderMsg); err != nil {
 		return err
+	}
+
+	var revertMessage kafka.Message = kafka.Message{
+		Topic: RevertOrderTopic,
+		Key: []byte(RevertOrderKey),
+		Value: []byte(orderMsg.OrderID),
 	}
 
 	logger.Info("Processing OrderCreated message", 
@@ -76,54 +89,42 @@ func handleOrderCreated(db *bun.DB, logger *zap.Logger, value []byte) error {
 		zap.String("product", orderMsg.Product),
 		zap.Int64("quantity", orderMsg.Quantity))
 
-	// First, check if the product exists in inventory
 	inventory := &models.Inventory{}
 	err := db.NewSelect().Model(inventory).
 		Where("product_id = ?", orderMsg.Product).
 		Scan(context.Background())
 
 	if err != nil {
-		logger.Error("Failed to get inventory for product", 
+		logger.Error("Reverting order, failed to get inventory for product", 
 			zap.String("product", orderMsg.Product), 
 			zap.Error(err))
-		
-		// If the product doesn't exist, we might want to create it with 0 quantity
-		// or handle this case differently based on business logic
-		logger.Warn("Product not found in inventory, creating with 0 quantity", 
-			zap.String("product", orderMsg.Product))
-		
-		inventory = &models.Inventory{
-			ProductID: orderMsg.Product,
-			Quantity:  0,
-		}
-		
-		// Try to insert the new inventory record
-		_, insertErr := db.NewInsert().Model(inventory).Exec(context.Background())
-		if insertErr != nil {
-			logger.Error("Failed to create inventory record", 
-				zap.String("product", orderMsg.Product), 
-				zap.Error(insertErr))
-			return insertErr
-		}
+
+		api.SendMessage(context.Background(), revertMessage)
+
+		return nil
 	}
 
 	if inventory.Quantity < orderMsg.Quantity {
-		logger.Warn("Insufficient inventory for order", 
+		logger.Warn("Reverting order, insufficient inventory for order", 
 			zap.String("orderID", orderMsg.OrderID),
 			zap.String("product", orderMsg.Product),
 			zap.Int64("requested", orderMsg.Quantity),
 			zap.Int64("available", inventory.Quantity))
+
+		api.SendMessage(context.Background(), revertMessage)
+
 		return nil
 	}
 
-	// Update inventory by reducing the quantity
 	inventory.Quantity -= orderMsg.Quantity
+
 	_, err = db.NewUpdate().Model(inventory).
 		Where("product_id = ?", orderMsg.Product).
 		Exec(context.Background())
 
 	if err != nil {
-		logger.Error("Failed to update inventory", zap.Error(err))
+		logger.Error("Reverting order, failed to update inventory", zap.Error(err))
+		api.SendMessage(context.Background(), revertMessage)
 		return err
 	}
 

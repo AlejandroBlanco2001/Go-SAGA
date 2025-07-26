@@ -8,10 +8,11 @@ const (
 	OrderStatusPending OrderStatus = iota
 	OrderStatusConfirmed
 	OrderStatusCanceled
+	OrderStatusCompleted
 )
 
 func (o OrderStatus) String() string {
-	return [...]string{"Pending", "Confirmed", "Delivering", "Completed", "Canceled"}[o-1]
+	return [...]string{"Pending", "Confirmed", "Canceled", "Completed"}[o-1]
 }
 
 func (o OrderStatus) EnumIndex() int {
