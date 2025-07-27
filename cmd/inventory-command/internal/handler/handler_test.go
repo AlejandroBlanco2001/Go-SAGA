@@ -17,7 +17,7 @@ import (
 )
 
 func setupHandler(t *testing.T) (http.Handler, *bun.DB) {
-	db := database.NewMockDatabase(t, &models.Order{})
+	db := database.NewMockDatabase(t, &models.Inventory{})
 	logger, _ := zap.NewDevelopment()
 	handler := NewHandler(logger, db, context.Background(), nil)
 	return handler, db
@@ -38,7 +38,7 @@ func TestHealthEndpoint(t *testing.T) {
 			name:           "GET request should return 200 OK",
 			method:         "GET",
 			expectedStatus: http.StatusOK,
-			expectedBody:   "Orders service is running",
+			expectedBody:   "Inventory service is running",
 		},
 	}
 
@@ -71,65 +71,59 @@ func TestHealthEndpoint(t *testing.T) {
 	}
 }
 
-func TestGetListOrdersEndpoint(t *testing.T) {
+func TestGetListInventoryEndpoint(t *testing.T) {
 	tests := []struct {
 		name           string
 		method         string
 		expectedStatus int
 		endpointURL    string
-		populateDB     func(db *bun.DB) []models.Order
+		populateDB     func(db *bun.DB) []models.Inventory
 	}{
 		{
-			name:           "GET request should return 204 OK and return empty orders",
+			name:           "GET request should return 204 OK and return empty inventory",
 			method:         "GET",
 			expectedStatus: http.StatusNoContent,
-			endpointURL:    "/orders",
-			populateDB: func(db *bun.DB) []models.Order {
-				return []models.Order{}
+			endpointURL:    "/inventory",
+			populateDB: func(db *bun.DB) []models.Inventory {
+				return []models.Inventory{}
 			},
 		},
 		{
-			name:           "GET request should return 200 OK and return one order",
+			name:           "GET request should return 200 OK and return one inventory",
 			method:         "GET",
-			endpointURL:    "/orders",
+			endpointURL:    "/inventory",
 			expectedStatus: http.StatusOK,
-			populateDB: func(db *bun.DB) []models.Order {
-				order := &models.Order{
-					Price:     100,
-					OrderID:   "1",
+			populateDB: func(db *bun.DB) []models.Inventory {
+				inventory := &models.Inventory{
 					ProductID: "1",
 					Quantity:  1,
-					UserID:    1,
 				}
 
-				_, _ = db.NewInsert().Model(order).Returning("*").Exec(context.Background())
+				_, _ = db.NewInsert().Model(inventory).Returning("*").Exec(context.Background())
 
-				return []models.Order{*order}
+				return []models.Inventory{*inventory}
 			},
 		},
 		{
-			name:           "GET request should return 200 OK and return multiple orders",
+			name:           "GET request should return 200 OK and return multiple inventory",
 			method:         "GET",
-			endpointURL:    "/orders",
+			endpointURL:    "/inventory",
 			expectedStatus: http.StatusOK,
-			populateDB: func(db *bun.DB) []models.Order {
-				orders := []models.Order{}
+			populateDB: func(db *bun.DB) []models.Inventory {
+				inventoryList := []models.Inventory{}
 
 				for i := 0; i < 10; i++ {
-					order := &models.Order{
-						Price:     float64(i),
-						OrderID:   fmt.Sprintf("%d", i),
+					inventory := &models.Inventory{
 						ProductID: fmt.Sprintf("%d", i),
 						Quantity:  int64(i),
-						UserID:    int64(i),
 					}
 
-					orders = append(orders, *order)
+					inventoryList = append(inventoryList, *inventory)
 				}
 
-				_, _ = db.NewInsert().Model(&orders).Returning("*").Exec(context.Background())
+				_, _ = db.NewInsert().Model(&inventoryList).Returning("*").Exec(context.Background())
 
-				return orders
+				return inventoryList
 			},
 		},
 	}
@@ -163,70 +157,67 @@ func TestGetListOrdersEndpoint(t *testing.T) {
 
 			body, err := io.ReadAll(resp.Body)
 
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			var orders []models.Order
-			err = json.Unmarshal(body, &orders)
-
 			if tt.expectedStatus == http.StatusNoContent {
-				if len(orders) != 0 {
-					t.Errorf("expected 0 orders, got %d", len(orders))
+				if len(expectedOrders) != 0 {
+					t.Errorf("expected 0 inventory, got %d", len(expectedOrders))
 				}
 				return
 			}
 
 			if err != nil {
+				t.Fatal(err)
+			}
+
+			var inventory []models.Inventory
+			err = json.Unmarshal(body, &inventory)
+
+			if err != nil {
 				t.Fatalf("failed to parse JSON: %v; raw body: %s", err, string(body))
 			}
 
-			if len(orders) != len(expectedOrders) {
-				t.Errorf("expected %d orders, got %d", len(expectedOrders), len(orders))
+			if len(inventory) != len(expectedOrders) {
+				t.Errorf("expected %d inventory, got %d", len(expectedOrders), len(inventory))
 			}
 
-			for i, order := range orders {
-				if order.ID != expectedOrders[i].ID {
-					t.Errorf("expected order %v, got %v", expectedOrders[i], order)
+			for i, inventory := range inventory {
+				if inventory.ID != expectedOrders[i].ID {
+					t.Errorf("expected inventory %v, got %v", expectedOrders[i], inventory)
 				}
 			}
 		})
 	}
 }
 
-func TestGetUniqueOrdersEndpoint(t *testing.T) {
+func TestGetUniqueInventoryEndpoint(t *testing.T) {
 	tests := []struct {
 		name           string
 		method         string
 		expectedStatus int
 		endpointURL    string
-		populateDB     func(db *bun.DB) *models.Order
+		populateDB     func(db *bun.DB) *models.Inventory
 	}{
 		{
-			name:           "GET request should return 200 OK and return one order",
+			name:           "GET request should return 200 OK and return one inventory",
 			method:         "GET",
-			endpointURL:    "/orders/1",
+			endpointURL:    "/inventory/1",
 			expectedStatus: http.StatusOK,
-			populateDB: func(db *bun.DB) *models.Order {
-				order := &models.Order{
-					Price:     100,
-					OrderID:   "1",
+			populateDB: func(db *bun.DB) *models.Inventory {
+				inventory := &models.Inventory{
 					ProductID: "1",
 					Quantity:  1,
-					UserID:    1,
 				}
 
-				_, _ = db.NewInsert().Model(order).Returning("*").Exec(context.Background())
+				_, _ = db.NewInsert().Model(inventory).Returning("*").Exec(context.Background())
 
-				return order
+				return inventory
 			},
 		},
 		{
-			name:           "GET request should return 404 Not Found when order does not exist",
+			name:           "GET request should return 404 Not Found when inventory does not exist",
 			method:         "GET",
-			endpointURL:    "/orders/100",
+			endpointURL:    "/inventory/100",
 			expectedStatus: http.StatusNotFound,
-			populateDB: func(db *bun.DB) *models.Order {
+			populateDB: func(db *bun.DB) *models.Inventory {
 				return nil
 			},
 		},
@@ -246,7 +237,7 @@ func TestGetUniqueOrdersEndpoint(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			expectedOrder := tt.populateDB(db)
+			expectedInventory := tt.populateDB(db)
 
 			resp, err := http.DefaultClient.Do(req)
 
@@ -265,19 +256,19 @@ func TestGetUniqueOrdersEndpoint(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if expectedOrder == nil {
+			if expectedInventory == nil {
 				return
 			}
 
-			var order *models.Order
-			err = json.Unmarshal(body, &order)
+			var inventory *models.Inventory
+			err = json.Unmarshal(body, &inventory)
 
 			if err != nil {
 				t.Fatalf("failed to parse JSON: %v; raw body: %s", err, string(body))
 			}
 
-			if order.ID != expectedOrder.ID {
-				t.Errorf("expected order %v, got %v", expectedOrder, order)
+			if inventory.ID != expectedInventory.ID {
+				t.Errorf("expected inventory %v, got %v", expectedInventory, inventory)
 			}
 		})
 	}

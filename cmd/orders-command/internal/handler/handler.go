@@ -35,7 +35,7 @@ func NewHandler(logger *zap.Logger, db *bun.DB, ctx context.Context, api client.
 		w.Write([]byte("Orders service is running"))
 	})
 
-	mux.HandleFunc("/orders", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /orders", func(w http.ResponseWriter, r *http.Request) {
 		orders, err := GetOrders(r.Context(), db)
 
 		if err != nil {
