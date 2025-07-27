@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"go.uber.org/fx"
@@ -17,13 +18,6 @@ import (
 	"saga-pattern/internal/database/models"
 
 	"github.com/joho/godotenv"
-)
-
-// Hardcoded DB config — you can replace this with env vars or config file later
-const (
-	port     = 5432
-	user     = "myuser"
-	password = "somerandompassword"
 )
 
 type DBConfig struct {
@@ -41,13 +35,22 @@ func (c *DBConfig) getDSN() string {
 // NewDatabase creates and returns a *bun.DB instance
 func NewDatabase(log *zap.Logger) (*bun.DB, error) {
 	err := godotenv.Load()
-
 	if err != nil {
-		log.Error("Error loading .env file", zap.Error(err))
+		log.Error("Error loading .env file, continuing with environment variables", zap.Error(err))
 	}
 
-	database := os.Getenv("DATABASE_NAME")
-	host := os.Getenv("HOST")
+	database := os.Getenv("POSTGRES_DB")
+	host := os.Getenv("POSTGRES_HOST")
+	portStr := os.Getenv("POSTGRES_PORT")
+	user := os.Getenv("POSTGRES_USER")
+	password := os.Getenv("POSTGRES_PASSWORD")
+
+	port, err := strconv.Atoi(portStr)
+
+	if err != nil {
+		log.Error("Invalid POSTGRES_PORT value", zap.String("POSTGRES_PORT", portStr), zap.Error(err))
+		return nil, fmt.Errorf("invalid POSTGRES_PORT: %w", err)
+	}
 
 	cfg := DBConfig{
 		host:     host,

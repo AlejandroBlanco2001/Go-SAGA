@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-service
+  labels:
+    app: orders-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orders-app
+  template:
+    metadata:
+      labels:
+        app: orders-app
+    spec:
+      containers:
+        - name: orders-container
+          image: orders-image:latest
+          imagePullPolicy: Never
+          env:
+            - name: POSTGRES_HOST
+              value: postgres
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_USER
+              value: myuser
+            - name: POSTGRES_DB
+              value: orders_database
+            - name: POSTGRES_PASSWORD
+              value: somerandompassword
+          ports:
+            - containerPort: 8080

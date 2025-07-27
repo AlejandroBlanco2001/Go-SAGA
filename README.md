@@ -30,7 +30,7 @@ bash setup/run-app.sh
 docker setup/run-app.sh -c / --clean
 ```
 
-## Easier Developer Experience
+## Easier Developer Experience (branch `easier-dev-xp`)
 In this stage, we are introducing:
 - 'Skaffold' for easier local development to avopid using docker compose for local development
 - 'Make' for building our application in a more automated way
