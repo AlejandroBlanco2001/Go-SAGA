@@ -36,6 +36,14 @@ In this stage, we are introducing:
 - 'Make' for building our application in a more automated way
 - 'K8s' (using minikube), to a have a better control over our containers
 
+>[!IMPORTANT]
+> You must run the following command before making any docker related stuff `eval $(minikube docker-env)`
+
+```bash
+# This will build the images of the services and run the k8s cluster
+make run-local
+```
+
 
 ## Don't want to repeat, let's template
 

@@ -24,4 +24,4 @@ local-k8s-deploy:
 
 run-local:
 	make build-images
-	make local-deploy
+	make local-k8s-deploy
