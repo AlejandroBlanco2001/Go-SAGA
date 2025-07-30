@@ -30,6 +30,9 @@ docker setup/run-app.sh -c / --clean
 ```
 
 ## Easier Developer Experience (branch `easier-dev-xp`)
+>[!INTO]
+> Run `make install-dependencies` will check the required deps such as Docker, minikube... and install the ones need it.
+
 In this stage, we are introducing:
 - 'Skaffold' for easier local development to avopid using docker compose for local development
 - 'Make' for building our application in a more automated way
