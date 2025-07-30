@@ -29,5 +29,13 @@ spec:
               value: orders_database
             - name: POSTGRES_PASSWORD
               value: somerandompassword
+            - name: SERVICE_TOPIC_READ
+              value: inventory
+            - name: SERVICE_TOPIC_WRITE
+              value: orders
+            - name: KAFKA_HOST
+              value: kafka-0.kafka
+            - name: KAFKA_PORT
+              value: "9092"
           ports:
             - containerPort: 8080

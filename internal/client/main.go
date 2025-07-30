@@ -2,7 +2,9 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"os"
+
 	"github.com/segmentio/kafka-go"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -18,16 +20,19 @@ type KafkaClient struct {
 }
 
 var topic_read = os.Getenv("SERVICE_TOPIC_READ")
-var topic_write = os.Getenv("SERVICE_TOPIC_WRITE")
+var kafka_host = os.Getenv("KAFKA_HOST")
+var kafka_port = os.Getenv("KAFKA_PORT")
 
 func NewClient(lc fx.Lifecycle, logger *zap.Logger, inputChan MessageChan, outputChan MessageChan) error {
+	kafka_url := fmt.Sprintf("%s:%s", kafka_host, kafka_port)
+
 	writer := kafka.NewWriter(kafka.WriterConfig{
-		Brokers:  []string{"kafka:9092"},
+		Brokers:  []string{kafka_url},
 		Balancer: &kafka.LeastBytes{},
 	})
 
 	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers: []string{"kafka:9092"},
+		Brokers: []string{kafka_url},
 		Topic:   topic_read,
 	})
 
