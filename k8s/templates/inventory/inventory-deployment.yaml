@@ -5,7 +5,7 @@ metadata:
   labels:
     app: inventory-app
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app: inventory-app
@@ -20,22 +20,22 @@ spec:
           imagePullPolicy: Never
           env:
             - name: POSTGRES_HOST
-              value: postgres
+              value: "{{ .Values.configuration.postgres.host }}"
             - name: POSTGRES_PORT
-              value: "5432"
+              value: "{{ .Values.configuration.postgres.port }}"
             - name: POSTGRES_USER
-              value: myuser
+              value: "{{ .Values.configuration.postgres.user }}"
             - name: POSTGRES_DB
-              value: orders_database
+              value: "{{ .Values.configuration.inventory.database_name }}"
             - name: POSTGRES_PASSWORD
-              value: somerandompassword
+              value: "{{ .Values.configuration.postgres.password }}"
             - name: SERVICE_TOPIC_READ
-              value: orders
+              value: "{{ .Values.configuration.inventory.service_topic_read }}"
             - name: SERVICE_TOPIC_WRITE
-              value: inventory
+              value: "{{ .Values.configuration.inventory.service_topic_write }}"
             - name: KAFKA_HOST
-              value: kafka-0.kafka
+              value: "{{ .Values.configuration.kafka.host }}"
             - name: KAFKA_PORT
-              value: "9092"
+              value: "{{ .Values.configuration.kafka.port }}"
           ports:
             - containerPort: 8080

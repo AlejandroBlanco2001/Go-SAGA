@@ -18,5 +18,4 @@ spec:
                 sleep 2
               done
               kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic orders --partitions 1 --replication-factor 1
-              kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic payments --partitions 1 --replication-factor 1
               kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic inventory --partitions 1 --replication-factor 1

@@ -17,28 +17,28 @@ spec:
         - name: kafka
           image: bitnami/kafka:latest
           ports:
-            - containerPort: 9092  # PLAINTEXT
-            - containerPort: 9093  # CONTROLLER
-            - containerPort: 9094  # EXTERNAL
+            - containerPort: 9092
+            - containerPort: 9093
+            - containerPort: 9094
           env:
             - name: KAFKA_CFG_NODE_ID
-              value: "1"
+              value: "{{ .Values.kafka.env.cfg_node_id }}"
             - name: KAFKA_CFG_PROCESS_ROLES
-              value: "broker,controller"
+              value: "{{ .Values.kafka.env.cfg_process_roles }}"
             - name: KAFKA_CFG_LISTENERS
-              value: "PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://0.0.0.0:9094"
+              value: "{{ .Values.kafka.env.cfg_listeners }}"
             - name: KAFKA_CFG_ADVERTISED_LISTENERS
-              value: "PLAINTEXT://kafka-0.kafka:9092,EXTERNAL://localhost:9094"
+              value: "{{ .Values.kafka.env.cfg_advertised_listeners }}"
             - name: KAFKA_CFG_CONTROLLER_QUORUM_VOTERS
-              value: "1@kafka-0.kafka:9093"
+              value: "{{ .Values.kafka.env.cfg_controller_quorum_voters }}"
             - name: KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP
-              value: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT"
+              value: "{{ .Values.kafka.env.cfg_listener_security_protocol_map }}"
             - name: KAFKA_CFG_CONTROLLER_LISTENER_NAMES
-              value: "CONTROLLER"
+              value: "{{ .Values.kafka.env.cfg_controller_listener_names }}"
             - name: KAFKA_CFG_INTER_BROKER_LISTENER_NAME
-              value: "PLAINTEXT"
+              value: "{{ .Values.kafka.env.cfg_inter_broker_listener_name }}"
             - name: ALLOW_PLAINTEXT_LISTENER
-              value: "yes"
+              value: "{{ .Values.kafka.env.allow_plaintext_listener }}"
           volumeMounts:
             - name: kafka-data
               mountPath: /bitnami/kafka

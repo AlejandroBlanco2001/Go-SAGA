@@ -1,0 +1,38 @@
+# Application configuration
+replicaCount: 1
+
+# Database configuration
+configuration:
+  postgres:
+    host: postgres
+    port: "5432"
+    user: myuser
+    password: somerandompassword
+  orders:
+    database_name: orders_database
+    service_topic_read: orders
+    service_topic_write: inventory
+  inventory:
+    database_name: inventory_database
+    service_topic_read: inventory
+    service_topic_write: orders
+  kafka:
+    host: kafka-0.kafka
+    port: "9092"
+
+# Kafka configuration
+kafka:
+  env:
+    cfg_node_id: "1"
+    cfg_process_roles: "broker,controller"
+    cfg_listeners: "PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://0.0.0.0:9094"
+    cfg_advertised_listeners: "PLAINTEXT://kafka-0.kafka:9092,EXTERNAL://localhost:9094"
+    cfg_controller_quorum_voters: "1@kafka-0.kafka:9093"
+    cfg_listener_security_protocol_map: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT"
+    cfg_controller_listener_names: "CONTROLLER"
+    cfg_inter_broker_listener_name: "PLAINTEXT"
+    allow_plaintext_listener: "yes"
+  ports:
+    - containerPort: 9092
+    - containerPort: 9093
+    - containerPort: 9094
