@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-orders
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-orders
+  template:
+    metadata:
+      labels:
+        app: postgres-orders
+    spec:
+      containers:
+        - name: postgres-orders
+          image: postgres:14
+          env:
+            - name: POSTGRES_USER
+              value: "{{ .Values.configuration.postgres.user }}"
+            - name: POSTGRES_PASSWORD
+              value: "{{ .Values.configuration.postgres.password }}"
+            - name: POSTGRES_DB
+              value: "{{ .Values.configuration.orders.database_name }}"
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: postgres-storage
+        hostPath:
+          path: /home/isaac/postgres-orders-data
+          type: DirectoryOrCreate

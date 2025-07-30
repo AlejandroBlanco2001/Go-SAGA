@@ -1,27 +1,27 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: postgres
+  name: postgres-inventory
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: postgres
+      app: postgres-inventory
   template:
     metadata:
       labels:
-        app: postgres
+        app: postgres-inventory
     spec:
       containers:
-        - name: postgres
+        - name: postgres-inventory
           image: postgres:14
           env:
             - name: POSTGRES_USER
-              value: myuser
+              value: "{{ .Values.configuration.postgres.user }}"
             - name: POSTGRES_PASSWORD
-              value: somerandompassword
+              value: "{{ .Values.configuration.postgres.password }}"
             - name: POSTGRES_DB
-              value: orders_database
+              value: "{{ .Values.configuration.inventory.database_name }}"
           ports:
             - containerPort: 5432
           volumeMounts:
@@ -30,5 +30,5 @@ spec:
       volumes:
       - name: postgres-storage
         hostPath:
-          path: /home/isaac/postgres-data
+          path: /home/isaac/postgres-inventory-data
           type: DirectoryOrCreate

@@ -20,7 +20,7 @@ spec:
           imagePullPolicy: Never
           env:
             - name: POSTGRES_HOST
-              value: "{{ .Values.configuration.postgres.host }}"
+              value: "{{ .Values.configuration.inventory.host }}"
             - name: POSTGRES_PORT
               value: "{{ .Values.configuration.postgres.port }}"
             - name: POSTGRES_USER

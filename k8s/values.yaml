@@ -4,15 +4,16 @@ replicaCount: 1
 # Database configuration
 configuration:
   postgres:
-    host: postgres
     port: "5432"
     user: myuser
     password: somerandompassword
   orders:
+    host: postgres-orders
     database_name: orders_database
     service_topic_read: orders
     service_topic_write: inventory
   inventory:
+    host: postgres-inventory
     database_name: inventory_database
     service_topic_read: inventory
     service_topic_write: orders
@@ -36,3 +37,30 @@ kafka:
     - containerPort: 9092
     - containerPort: 9093
     - containerPort: 9094
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+  hosts:
+    - host: saga-go.local
+      paths:
+        - path: /orders
+          pathType: Prefix
+          service: orders-service
+          port: 80
+        - path: /inventory
+          pathType: Prefix
+          service: inventory-service
+          port: 80
+        - path: /kafka-ui
+          pathType: Prefix
+          service: kafka-ui
+          port: 80
+  tls: []
