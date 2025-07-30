@@ -50,7 +50,7 @@ make dev
 ```
 
 
-## Don't want to repeat, let's template
+## Don't want to repeat, let's template (branch `helm-is-here`)
 
 In this stage, Helm is introduce to avoid duplication inside of our YAML's and have a versioning of our deployments.
 

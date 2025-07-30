@@ -71,6 +71,12 @@ check_prerequisites() {
     else
         print_success "Minikube is installed"
     fi
+
+    if ! command_exists helm; then
+        print_warning "Helm not found. Install for k8s development: https://helm.sh/docs/intro/install/"
+    else
+        print_success "Helm is installed"
+    fi
     
     if ! command_exists kubectl; then
         print_warning "kubectl not found. Install for k8s development: https://kubernetes.io/docs/tasks/tools/"
