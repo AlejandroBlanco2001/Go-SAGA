@@ -1,0 +1,26 @@
+apiVersion: skaffold/v4beta13
+kind: Config
+metadata:
+  name: saga-go
+build:
+  artifacts:
+    - image: inventory-image
+      context: .
+      docker:
+        dockerfile: ./docker/inventory-command/inventory.dockerfile
+    - image: orders-image
+      context: .
+      docker:
+        dockerfile: ./docker/orders-command/orders.dockerfile
+manifests:
+  rawYaml:
+    - k8s/kafka/kafka-service.yml
+    - k8s/kafka/kafka-stafulset.yml
+    - k8s/kafka/kafka-topic-creator.yml
+    - k8s/kafka/kafka-ui-deployment.yml
+    - k8s/orders/inventory-deployment.yaml
+    - k8s/orders/inventory-service.yaml
+    - k8s/orders/orders-deployment.yaml
+    - k8s/orders/orders-service.yaml
+    - k8s/orders/postgres-deployment.yaml
+    - k8s/orders/postgres-service.yaml
