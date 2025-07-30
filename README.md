@@ -6,7 +6,7 @@ This project will also showcase (using different branches) how we can simplify t
 
 ## 🔄 **SAGA Pattern Flow**
 
-The SAGA pattern ensures distributed transactions across microservices using event-driven choreography:
+The SAGA pattern ensures distributed transactions across microservices using event-driven choreography. When an order is created, the inventory is checked through messages, and if not available, the order is cancelled:
 
 ```mermaid
 sequenceDiagram
@@ -28,22 +28,13 @@ sequenceDiagram
         O->>O: Confirm Order
         O->>C: Order Confirmed
     else Insufficient Inventory
-        I->>K: Publish InventoryUnavailable Event
-        K->>O: Consume InventoryUnavailable Event
+        I->>K: Publish RevertOrder Event
+        K->>O: Consume RevertOrder Event
         O->>O: Cancel Order
         O->>C: Order Cancelled
     end
-    
-    Note over C,I: Order Cancellation SAGA
-    C->>O: Cancel Order
-    O->>K: Publish OrderCancelled Event
-    K->>I: Consume OrderCancelled Event
-    I->>I: Release Reserved Items
-    I->>K: Publish InventoryReleased Event
-    K->>O: Consume InventoryReleased Event
-    O->>O: Order Cancellation Complete
-    O->>C: Order Cancelled
 ```
+
 
 ## 🏗️ **Project Structure**
 
