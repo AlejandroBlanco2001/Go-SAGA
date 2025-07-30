@@ -20,7 +20,12 @@ dry-run-helm:
 	helm install test-release ./k8s --dry-run
 
 delete-helm:
-	helm delete test-release
+	helm delete saga-go
 
-deploy-helm:
-	helm install test-release ./k8s
+# First time deployment
+create-helm:
+	helm install saga-go ./k8s
+
+# New deployment
+upgrade-helm:
+	helm upgrade saga-go ./k8s
