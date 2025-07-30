@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-service
+  labels:
+    app: inventory-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventory-app
+  template:
+    metadata:
+      labels:
+        app: inventory-app
+    spec:
+      containers:
+        - name: inventory-container
+          image: inventory-image:latest
+          imagePullPolicy: Never
+          env:
+            - name: POSTGRES_HOST
+              value: postgres
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_USER
+              value: myuser
+            - name: POSTGRES_DB
+              value: orders_database
+            - name: POSTGRES_PASSWORD
+              value: somerandompassword
+            - name: SERVICE_TOPIC_READ
+              value: orders
+            - name: SERVICE_TOPIC_WRITE
+              value: inventory
+            - name: KAFKA_HOST
+              value: kafka-0.kafka
+            - name: KAFKA_PORT
+              value: "9092"
+          ports:
+            - containerPort: 8080
