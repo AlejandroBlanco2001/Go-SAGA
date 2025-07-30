@@ -5,7 +5,7 @@ This is an example of how a [SAGA Pattern](https://medium.com/cloud-native-daily
 This project will also showcase (using different branches) how we can simplify the life of the developer experience with the introduction of tools such as Skaffold, Helm and Make.
 
 # Structure of the project
-For this project, we are going to show a minimal setup of 3 microservices:
+For this project, we are going to show a minimal setup of 2 microservices:
 - Order: Service incharge of handling all the orders that are made to our restaurant
 - Inventory: Service incharge of handling all the deliveres to the user
 
