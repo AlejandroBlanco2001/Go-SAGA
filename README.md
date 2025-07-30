@@ -7,7 +7,6 @@ This project will also showcase (using different branches) how we can simplify t
 # Structure of the project
 For this project, we are going to show a minimal setup of 3 microservices:
 - Order: Service incharge of handling all the orders that are made to our restaurant
-- Payment: Service incharge of handling all the payments of all the orders
 - Inventory: Service incharge of handling all the deliveres to the user
 
 # How to run it?
@@ -37,11 +36,14 @@ In this stage, we are introducing:
 - 'K8s' (using minikube), to a have a better control over our containers
 
 >[!IMPORTANT]
-> You must run the following command before making any docker related stuff `eval $(minikube docker-env)`
+> You must run the following command before making any docker related stuff 
 
-```bash
-# This will build the images of the services and run the k8s cluster
-make run-local
+```
+skaffold config set --global local-cluster true eval $(minikube -p custom docker-env)
+```
+To build and deploy just run
+```
+make dev
 ```
 
 

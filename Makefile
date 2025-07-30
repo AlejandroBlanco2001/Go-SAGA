@@ -12,5 +12,5 @@ build-binary-local-order-service:
 	GOOS=darwin GOARCH=amd64 go build -o bin/orders-command-darwin-amd64 cmd/orders-command/main.go
 	GOOS=windows GOARCH=amd64 go build -o bin/orders-command-windows-amd64.exe cmd/orders-command/main.go
 
-run-local:
+dev:
 	skaffold dev
